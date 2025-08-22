@@ -12,7 +12,6 @@ package s3
 
 import (
 	"bytes"
-	"context"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
@@ -1042,10 +1041,10 @@ func (s3 *S3) run(req *request, resp interface{}) (*http.Response, error) {
 		Header:     req.headers,
 	}
 
-	// TODO: It should be configurable
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(300*time.Second))
-	defer cancel()
-	hreq.WithContext(ctx)
+	// // TODO: It should be configurable
+	// ctx, cancel := context.WithTimeout(context.Background(), time.Duration(300*time.Second))
+	// defer cancel()
+	// hreq = *hreq.WithContext(ctx)
 
 	if v, ok := req.headers["Content-Length"]; ok {
 		hreq.ContentLength, _ = strconv.ParseInt(v[0], 10, 64)
