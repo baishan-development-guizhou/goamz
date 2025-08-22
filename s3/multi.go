@@ -139,6 +139,44 @@ func (b *Bucket) InitMulti(key string, contType string, perm ACL) (*Multi, error
 	return &Multi{Bucket: b, Key: key, UploadId: resp.UploadId}, nil
 }
 
+func (b *Bucket) InitMultiWithHeaders(key string, contType string, perm ACL, extHeader map[string]string) (*Multi, error) {
+	headers := map[string][]string{
+		"Content-Type":   {contType},
+		"Content-Length": {"0"},
+	}
+	if perm != "" {
+		headers["x-amz-acl"] = []string{string(perm)}
+	}
+
+	for k, v := range extHeader {
+		headers[k] = []string{v}
+	}
+	params := map[string][]string{
+		"uploads": {""},
+	}
+	req := &request{
+		method:  "POST",
+		bucket:  b.Name,
+		path:    key,
+		headers: headers,
+		params:  params,
+	}
+	var err error
+	var resp struct {
+		UploadId string `xml:"UploadId"`
+	}
+	for attempt := attempts.Start(); attempt.Next(); {
+		err = b.S3.query(req, &resp)
+		if !shouldRetry(err) {
+			break
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &Multi{Bucket: b, Key: key, UploadId: resp.UploadId}, nil
+}
+
 // PutPart sends part n of the multipart upload, reading all the content from r.
 // Each part, except for the last one, must be at least 5MB in size.
 //
